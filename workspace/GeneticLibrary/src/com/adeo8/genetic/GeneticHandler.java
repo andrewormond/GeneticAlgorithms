@@ -9,6 +9,8 @@ package com.adeo8.genetic;
  */
 public interface GeneticHandler {
 	public double getFitness(GeneticData data);
+	
+	public void displayBest(GeneticData best);
 
 	public GeneticData[] generatePopulation();
 }

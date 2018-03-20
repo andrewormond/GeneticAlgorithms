@@ -10,13 +10,10 @@ public class GeneticSystem {
 	public GeneticHandler handler;
 	public GeneticData[] population;
 
-	public float eliteCarry = 0.05f;
-	public float otherCarry = 0.1f;
-	public float mutateToBreedRatio = 0.5f;
-	public float maxFitness = 1f;
-	public int numThreads = 8;
+	public GeneticConfig config;
 
-	public GeneticSystem(GeneticHandler handler) {
+	public GeneticSystem(GeneticHandler handler, GeneticConfig config) {
+		this.config = config;
 		this.handler = handler;
 	}
 
@@ -34,32 +31,35 @@ public class GeneticSystem {
 
 		Map.Entry<GeneticData, Double> res = getMostFit(results);
 		Utils.plotHistogram(population, this.handler, 50,
-				"\"Round #" + round + "\" Best=" + String.format("%.3f", res.getValue()));
-		// System.out.println("First for round #" + round + ": [" + res.getValue() + "]
-		// " + res.getKey());
-		if (res.getValue() < maxFitness) {
-			return true;
+				"\"Round #" + round + "\" Best=" + String.format("%.3f", res.getValue()), config);
+		handler.displayBest(res.getKey());
+
+		try {
+			Thread.sleep(config.waitBeforeRound);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 
-		int eliteAmount = (int) (population.length * eliteCarry);
-		int otherAmount = (int) (population.length * otherCarry);
-		int reserved = eliteAmount + otherAmount;
+		int eliteAmount = (int) (population.length * config.percentage_elite);
+		int carryAmount = (int) (population.length * config.percentage_carry);
+		int reserved = eliteAmount + carryAmount;
 		int nonReserved = population.length - reserved;
-		int splitIndex = reserved + (int) (nonReserved * this.mutateToBreedRatio);
+		int splitIndex = reserved + (int) (nonReserved * config.ratio_mutateToBreed);
 		GeneticData[] sortedPop = new GeneticData[population.length];
 		for (int i = 0; i < population.length; i++) {
 			sortedPop[i] = results.get(i).getKey();
 		}
 		GeneticData[] nextGen = new GeneticData[population.length];
-		Thread[] threads = new Thread[numThreads];
-		GeneticProcess[] procc = new GeneticProcess[numThreads];
-		if (nextGen.length % numThreads != 0) {
+		Thread[] threads = new Thread[config.number_threads];
+		GeneticProcess[] procc = new GeneticProcess[config.number_threads];
+		if (nextGen.length % config.number_threads != 0) {
 			System.err.println("Warning: population not divisible by threads");
 		}
-		int iLength = nextGen.length / numThreads;
-		for (int t = 0; t < numThreads; t++) {
+		int iLength = nextGen.length / config.number_threads;
+		for (int t = 0; t < config.number_threads; t++) {
 			procc[t] = new GeneticProcess(t, t * iLength, (t + 1) * iLength, sortedPop, eliteAmount, splitIndex,
-					otherAmount);
+					carryAmount);
 			threads[t] = new Thread(procc[t]);
 
 		}
@@ -81,12 +81,11 @@ public class GeneticSystem {
 			try {
 				t.join();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 
-		for (int t = 0; t < numThreads; t++) {
+		for (int t = 0; t < config.number_threads; t++) {
 			if (procc[t] != null) {
 				System.arraycopy(procc[t].data, 0, nextGen, t * iLength, iLength);
 			}
@@ -129,10 +128,10 @@ public class GeneticSystem {
 		return getMostFit(results);
 	}
 
-	public Map.Entry<GeneticData, Double> start(int numRounds) {
+	public Map.Entry<GeneticData, Double> start() {
 		population = handler.generatePopulation();
 
-		for (int round = 0; round < numRounds; round++) {
+		for (int round = 0; round < config.NUM_ROUNDS; round++) {
 			if (doRound(round)) {
 				break;
 			}

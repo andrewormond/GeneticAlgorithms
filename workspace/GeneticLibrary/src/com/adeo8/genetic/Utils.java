@@ -64,12 +64,11 @@ public class Utils {
 		return sortedEntries;
 	}
 
-	private static final double MAX = 20;
-
 	static Object lock = new Object();
 	static ApplicationFrame frame = null;
 
-	public static void plotHistogram(GeneticData[] population, GeneticHandler handler, int numBins, String name) {
+	public static void plotHistogram(GeneticData[] population, GeneticHandler handler, int numBins, String name,
+			GeneticConfig config) {
 		final GeneticData[] dats = population.clone();
 		Thread t = new Thread(new Runnable() {
 
@@ -79,8 +78,8 @@ public class Utils {
 				double[] fitness = new double[population.length];
 				for (int i = 0; i < fitness.length; i++) {
 					fitness[i] = Math.log10(handler.getFitness(population[i]));
-					if (fitness[i] > MAX) {
-						fitness[i] = MAX;
+					if (fitness[i] > config.maxLog10_fitness) {
+						fitness[i] = config.maxLog10_fitness;
 					}
 				}
 				HistogramDataset dataset = new HistogramDataset();
@@ -120,6 +119,15 @@ public class Utils {
 
 		t.start();
 
+	}
+
+	public static double clamp(double percentage) {
+		if (percentage < 0) {
+			percentage = 0;
+		} else if (percentage > 1) {
+			percentage = 1;
+		}
+		return percentage;
 	}
 
 }

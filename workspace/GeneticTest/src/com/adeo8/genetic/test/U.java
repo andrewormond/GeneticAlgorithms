@@ -9,16 +9,12 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.statistics.HistogramDataset;
-import org.jfree.data.statistics.HistogramType;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
 
 import com.adeo8.genetic.DoubleData;
-import com.adeo8.genetic.GeneticData;
-import com.adeo8.genetic.GeneticHandler;
 
 public class U {
 
@@ -47,8 +43,6 @@ public class U {
 		return points;
 	}
 
-	
-
 	public static void plotAll(DoubleData[] population, double xMin, double xMax, int n) {
 		final XYSeriesCollection data = new XYSeriesCollection();
 		int i = 1;
@@ -75,31 +69,60 @@ public class U {
 		frame.setVisible(true);
 	}
 
+	public static void plotLine(DoubleData data, FitterConfig config) {
+
+		LinkedHashMap<Double, Double> points = U.evaluateSeries(data.toDoubles(), config.X_MIN, config.X_MAX,
+				config.NUM_POINTS);
+		U.plotPoints(data.toString(), points, config.testPoints);
+	}
+
+	static Object lock = new Object();
+	static ApplicationFrame frame = null;
+
 	public static void plotPoints(String name, LinkedHashMap<Double, Double> points,
 			LinkedHashMap<Double, Double> realPoints) {
-		final XYSeries series = new XYSeries(name);
-		for (Map.Entry<Double, Double> p : points.entrySet()) {
-			series.add(p.getKey(), p.getValue());
-		}
-		final XYSeries realseries = new XYSeries("Real");
-		for (Map.Entry<Double, Double> p : realPoints.entrySet()) {
-			realseries.add(p.getKey(), p.getValue());
-		}
-		final XYSeriesCollection data = new XYSeriesCollection(series);
-		data.addSeries(realseries);
 
-		final JFreeChart chart = ChartFactory.createXYLineChart("Data vs. Best Fit", "X", "Y", data,
-				PlotOrientation.VERTICAL, true, true, false);
+		Thread t = new Thread(new Runnable() {
 
-		final ChartPanel chartPanel = new ChartPanel(chart);
-		chart.getXYPlot().setDataset(0, data);
-		chartPanel.setPreferredSize(new java.awt.Dimension(750, 400));
-		ApplicationFrame frame = new ApplicationFrame(name);
-		frame.setContentPane(chartPanel);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.pack();
-		RefineryUtilities.positionFrameOnScreen(frame, 0.5d, 0d);
-		frame.setVisible(true);
+			@Override
+			public void run() {
+				XYSeries series = new XYSeries(name);
+				for (Map.Entry<Double, Double> p : points.entrySet()) {
+					series.add(p.getKey(), p.getValue());
+				}
+				XYSeries realseries = new XYSeries("Real");
+				for (Map.Entry<Double, Double> p : realPoints.entrySet()) {
+					realseries.add(p.getKey(), p.getValue());
+				}
+				XYSeriesCollection data = new XYSeriesCollection(series);
+				data.addSeries(realseries);
+
+				JFreeChart chart = ChartFactory.createXYLineChart("Data vs. Best Fit", "X", "Y", data,
+						PlotOrientation.VERTICAL, true, true, false);
+
+				ChartPanel chartPanel = new ChartPanel(chart);
+				chartPanel.setPreferredSize(new java.awt.Dimension(750, 400));
+				synchronized (lock) {
+					boolean centered = false;
+					if (frame == null || !frame.isShowing()) {
+						frame = new ApplicationFrame("Best Fit");
+						centered = true;
+						RefineryUtilities.positionFrameOnScreen(frame, 0.5d, 0d);
+					}
+					frame.setContentPane(chartPanel);
+					frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+					frame.pack();
+					frame.setVisible(true);
+					if (centered) {
+						RefineryUtilities.positionFrameOnScreen(frame, 0.5d, 0d);
+					}
+				}
+
+			}
+
+		});
+
+		t.start();
 	}
 
 }
