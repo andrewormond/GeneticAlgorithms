@@ -28,11 +28,14 @@ public class GeneticSystem {
 
 	private boolean doRound(int round) {
 		ArrayList<Map.Entry<GeneticData, Double>> results = testPopulation();
-
 		Map.Entry<GeneticData, Double> res = getMostFit(results);
-		Utils.plotHistogram(population, this.handler, 50,
-				"\"Round #" + round + "\" Best=" + String.format("%.3f", res.getValue()), config);
-		handler.displayBest(res.getKey());
+
+		if (config.verbose) {
+			Utils.plotHistogram(population, this.handler, 50,
+					"\"Round #" + round + "\" Best=" + String.format("%.3f", res.getValue()), config);
+			handler.displayBest(res.getKey());
+		}
+		System.out.println("\"Round #" + round + "\" Best="+res.getKey()+" : " + String.format("%.3f", res.getValue()));
 
 		try {
 			Thread.sleep(config.waitBeforeRound);
@@ -92,6 +95,7 @@ public class GeneticSystem {
 		}
 
 		population = nextGen;
+		population[0] = res.getKey();
 
 		return false;
 

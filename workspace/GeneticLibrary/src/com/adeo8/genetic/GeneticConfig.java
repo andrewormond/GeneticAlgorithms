@@ -10,6 +10,7 @@ public class GeneticConfig {
 	public int NUM_ROUNDS = 10;
 	
 	public long waitBeforeRound = 0;
+	public boolean verbose = true;
 
 	public GeneticConfig() {
 

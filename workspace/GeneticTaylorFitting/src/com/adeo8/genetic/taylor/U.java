@@ -1,5 +1,7 @@
-package com.adeo8.genetic.test;
+package com.adeo8.genetic.taylor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -31,12 +33,13 @@ public class U {
 		return points;
 	}
 
-	public static LinkedHashMap<Double, Double> evaluateSeries(double[] coefficients, double xMin, double xMax, int n) {
+	public static LinkedHashMap<Double, Double> evaluateSeries(ArrayList<Double> arrayList, double xMin, double xMax,
+			int n) {
 		LinkedHashMap<Double, Double> points = new LinkedHashMap<Double, Double>();
 		for (double x = xMin; x <= xMax; x += (xMax - xMin) / n) {
 			double y = 0;
-			for (int i = 0; i < coefficients.length; i++) {
-				y += coefficients[i] * Math.pow(x, i);
+			for (int i = 0; i < arrayList.size(); i++) {
+				y += arrayList.get(i) * Math.pow(x, i);
 			}
 			points.put(x, y);
 		}
@@ -47,7 +50,7 @@ public class U {
 		final XYSeriesCollection data = new XYSeriesCollection();
 		int i = 1;
 		for (DoubleData dat : population) {
-			LinkedHashMap<Double, Double> points = evaluateSeries(dat.toDoubles(), xMin, xMax, n);
+			LinkedHashMap<Double, Double> points = evaluateSeries(dat.toArray(), xMin, xMax, n);
 			final XYSeries series = new XYSeries("[" + (i++) + "]");
 			for (Map.Entry<Double, Double> p : points.entrySet()) {
 				series.add(p.getKey(), p.getValue());
@@ -71,7 +74,7 @@ public class U {
 
 	public static void plotLine(DoubleData data, FitterConfig config) {
 
-		LinkedHashMap<Double, Double> points = U.evaluateSeries(data.toDoubles(), config.X_MIN, config.X_MAX,
+		LinkedHashMap<Double, Double> points = U.evaluateSeries(data.toArray(), config.X_MIN, config.X_MAX,
 				config.NUM_POINTS);
 		U.plotPoints(data.toString(), points, config.testPoints);
 	}
@@ -81,7 +84,6 @@ public class U {
 
 	public static void plotPoints(String name, LinkedHashMap<Double, Double> points,
 			LinkedHashMap<Double, Double> realPoints) {
-
 		Thread t = new Thread(new Runnable() {
 
 			@Override
@@ -94,7 +96,8 @@ public class U {
 				for (Map.Entry<Double, Double> p : realPoints.entrySet()) {
 					realseries.add(p.getKey(), p.getValue());
 				}
-				XYSeriesCollection data = new XYSeriesCollection(series);
+				XYSeriesCollection data = new XYSeriesCollection();
+				data.addSeries(series);
 				data.addSeries(realseries);
 
 				JFreeChart chart = ChartFactory.createXYLineChart("Data vs. Best Fit", "X", "Y", data,

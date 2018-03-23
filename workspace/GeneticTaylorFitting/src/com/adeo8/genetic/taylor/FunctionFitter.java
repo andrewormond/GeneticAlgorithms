@@ -1,5 +1,7 @@
-package com.adeo8.genetic.test;
+package com.adeo8.genetic.taylor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -46,7 +48,7 @@ public class FunctionFitter implements GeneticHandler {
 	@Override
 	public double getFitness(GeneticData data) {
 		DoubleData line = (DoubleData) data;
-		LinkedHashMap<Double, Double> points = U.evaluateSeries(line.toDoubles(), config.X_MIN, config.X_MAX,
+		LinkedHashMap<Double, Double> points = U.evaluateSeries(line.toArray(), config.X_MIN, config.X_MAX,
 				config.NUM_POINTS);
 		double r = 0;
 		for (double x = config.X_MIN; x <= config.X_MAX; x += (config.X_MAX - config.X_MIN) / config.NUM_POINTS) {
@@ -84,7 +86,7 @@ public class FunctionFitter implements GeneticHandler {
 		for (int i = 0; i < config.POWER; i++) {
 			doubles[i] = 6 * (r.nextDouble() - 0.5d);
 		}
-		LinkedHashMap<Double, Double> points = U.evaluateSeries(doubles, config.X_MIN, config.X_MAX, config.NUM_POINTS);
+		LinkedHashMap<Double, Double> points = U.evaluateSeries(DoubleData.doubleToDouble(doubles), config.X_MIN, config.X_MAX, config.NUM_POINTS);
 		double noise = Math.pow(config.X_MAX, config.POWER - 1) * config.noiseModifier;
 		for (double d : points.keySet()) {
 			points.put(d, points.get(d) + noise * 2 * (r.nextDouble() - 0.5d));
